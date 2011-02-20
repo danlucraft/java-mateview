@@ -18,7 +18,7 @@ public class Scanner implements Iterable<Marker> {
 	public int lineLength;
 	public int lineIx;
 	public Logger logger;
-	public enum Mode { FULL, DOUBLE_ONLY }
+	public enum Mode { FULL, DOUBLE_ONLY, VALIDATE_DOUBLE}
 	public final Mode mode;
 	
 	public void setCurrentScope(Scope scope) {
@@ -30,7 +30,7 @@ public class Scanner implements Iterable<Marker> {
 	}
 	
 	public Scanner(Scope startScope, String line, int lineIx) {
-		this(startScope, line, lineIx, Mode.FULL);
+		this(startScope, line, lineIx, Mode.DOUBLE_ONLY);
 	}
 	
 	public Scanner(Scope startScope, String line, int lineIx, Mode mode) {
@@ -100,43 +100,60 @@ public class Scanner implements Iterable<Marker> {
 			return null;
 		
 		DoublePattern dp = (DoublePattern) (currentScope.pattern);
-		Marker newMarker = scanLine(dp, this.mode);
+		dp.replaceGrammarIncludes();
+		
+		Marker newMarker = scanLine(dp);
 		if (newMarker != null) {
-			// if (this.mode == Mode.DOUBLE_ONLY) {
-			// 	
-			// }
 			bestMarker = newMarker.bestOf(bestMarker);
 		}
 		return bestMarker;
 	}
 	
-	public Marker scanLine(DoublePattern dp, Mode thisMode) {
-		dp.replaceGrammarIncludes();
-		
+	// public ArrayList<Marker> allDoublesOnLine(DoublePattern dp) {
+	// 	ArrayList<Marker> doubleMarkers = new ArrayList<Marker>();
+	// 	for (Pattern p : dp.patterns) {
+	// 		if (p.disabled) continue;
+	// 		Match match = scanForMatch(position, p);
+	// 		if (match != null) {
+	// 			Marker newMarker = markerFromMatch(p, match);
+	// 			if (newMarker != null) {
+	// 				doubleMarkers.add(newMarker);
+	// 			}
+	// 		}
+	// 	}
+	// 	return doubleMarkers;
+	// }
+	
+	public Marker scanLine(DoublePattern dp) {
 		Marker bestMarker = null;
 		for (Pattern p : dp.patterns) {
 			// System.out.printf("     scanning for %s (%s)\n", p.name, p.disabled);
-			if (p.disabled || (thisMode == Mode.DOUBLE_ONLY && p instanceof SinglePattern)) {
-				continue;
-			}
+			if (p.disabled) continue;
 			Match match = scanForMatch(position, p);
 			if (match != null) {
-				Marker newMarker = new Marker();
-				newMarker.pattern = p;
-				newMarker.match = match;
-				try {
-					newMarker.from = match.getCapture(0).start;
+				Marker newMarker = markerFromMatch(p, match);
+				if (newMarker != null) {
+					bestMarker = newMarker.bestOf(bestMarker);
 				}
-				catch (ArrayIndexOutOfBoundsException e) {
-					System.out.printf("*** Warning ArrayIndexOutOfBoundsException pattern: %s, line:'%s'\n", p.name, line);
-					e.printStackTrace();
-					continue;
-				}
-				newMarker.isCloseScope = false;
-				bestMarker = newMarker.bestOf(bestMarker);
 			}
 		}
 		return bestMarker;
+	}
+	
+	public Marker markerFromMatch(Pattern p, Match match) {
+		Marker newMarker = new Marker();
+		newMarker.pattern = p;
+		newMarker.match = match;
+		try {
+			newMarker.from = match.getCapture(0).start;
+		}
+		catch (ArrayIndexOutOfBoundsException e) {
+			System.out.printf("*** Warning ArrayIndexOutOfBoundsException pattern: %s, line:'%s'\n", p.name, line);
+			e.printStackTrace();
+			return null;
+		}
+		newMarker.isCloseScope = false;
+		return newMarker;
 	}
 	
 	public Iterator<Marker> iterator() {
