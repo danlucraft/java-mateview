@@ -102,6 +102,9 @@ public class Scanner implements Iterable<Marker> {
 		DoublePattern dp = (DoublePattern) (currentScope.pattern);
 		Marker newMarker = scanLine(dp, this.mode);
 		if (newMarker != null) {
+			// if (this.mode == Mode.DOUBLE_ONLY) {
+			// 	
+			// }
 			bestMarker = newMarker.bestOf(bestMarker);
 		}
 		return bestMarker;
@@ -113,7 +116,7 @@ public class Scanner implements Iterable<Marker> {
 		Marker bestMarker = null;
 		for (Pattern p : dp.patterns) {
 			// System.out.printf("     scanning for %s (%s)\n", p.name, p.disabled);
-			if (p.disabled || thisMode == Mode.DOUBLE_ONLY) {
+			if (p.disabled || (thisMode == Mode.DOUBLE_ONLY && p instanceof SinglePattern)) {
 				continue;
 			}
 			int positionNow = position;
@@ -122,7 +125,7 @@ public class Scanner implements Iterable<Marker> {
 			while ((match = scanForMatch(positionNow, p)) != null &&
 					match.getCapture(0).start >= positionNow &&
 					positionNow != positionPrev // some regex's have zero width (meta.selector.css)
-				) {
+			) {
 				positionPrev = positionNow;
 				Marker newMarker = new Marker();
 				newMarker.pattern = p;
