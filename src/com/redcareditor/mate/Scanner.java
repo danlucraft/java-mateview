@@ -18,7 +18,9 @@ public class Scanner implements Iterable<Marker> {
 	public int lineLength;
 	public int lineIx;
 	public Logger logger;
-
+	public enum Mode { FULL, DOUBLE_ONLY }
+	public final Mode mode;
+	
 	public void setCurrentScope(Scope scope) {
 		this.currentScope = scope;
 	}
@@ -28,11 +30,16 @@ public class Scanner implements Iterable<Marker> {
 	}
 	
 	public Scanner(Scope startScope, String line, int lineIx) {
+		this(startScope, line, lineIx, Mode.FULL);
+	}
+	
+	public Scanner(Scope startScope, String line, int lineIx, Mode mode) {
 		this.currentScope = startScope;
 		this.line = line;
 		this.lineIx = lineIx;
 		this.lineLength = line.getBytes().length;
 		this.position = 0;
+		this.mode = mode;
 		logger = Logger.getLogger("JMV.Scanner");
 		logger.setUseParentHandlers(false);
 		for (Handler h : logger.getHandlers()) {
@@ -57,7 +64,6 @@ public class Scanner implements Iterable<Marker> {
 		}
 		return match;
 	}
-	
 	
 	public Marker findNextMarker() {
 		if (position >= this.lineLength)
@@ -88,15 +94,28 @@ public class Scanner implements Iterable<Marker> {
 				// logger.info(String.format("no close match"));
 			}
 		}
+		
 		//logger.info(String.format("  scanning for %d patterns", ((DoublePattern) currentScope.pattern).patterns.size()));
 		if (currentScope.pattern instanceof SinglePattern)
 			return null;
+		
 		DoublePattern dp = (DoublePattern) (currentScope.pattern);
+		Marker newMarker = scanLine(dp, this.mode);
+		if (newMarker != null) {
+			bestMarker = newMarker.bestOf(bestMarker);
+		}
+		return bestMarker;
+	}
+	
+	public Marker scanLine(DoublePattern dp, Mode thisMode) {
 		dp.replaceGrammarIncludes();
+		
+		Marker bestMarker = null;
 		for (Pattern p : dp.patterns) {
 			// System.out.printf("     scanning for %s (%s)\n", p.name, p.disabled);
-			if (p.disabled)
+			if (p.disabled || thisMode == Mode.DOUBLE_ONLY) {
 				continue;
+			}
 			int positionNow = position;
 			int positionPrev = position-1;
 			Match match;
