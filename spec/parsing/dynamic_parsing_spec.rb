@@ -94,9 +94,7 @@ describe JavaMateView, "when reparsing after changes" do
       HI
       puts "hello"
       END
-      p :START
       1.times { @mt.type(4, 2, " ") }
-      p :END
       it_should_match_clean_reparse
     end
 

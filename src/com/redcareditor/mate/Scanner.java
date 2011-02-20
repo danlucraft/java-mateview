@@ -119,14 +119,8 @@ public class Scanner implements Iterable<Marker> {
 			if (p.disabled || (thisMode == Mode.DOUBLE_ONLY && p instanceof SinglePattern)) {
 				continue;
 			}
-			int positionNow = position;
-			int positionPrev = position-1;
-			Match match;
-			while ((match = scanForMatch(positionNow, p)) != null &&
-					match.getCapture(0).start >= positionNow &&
-					positionNow != positionPrev // some regex's have zero width (meta.selector.css)
-			) {
-				positionPrev = positionNow;
+			Match match = scanForMatch(position, p);
+			if (match != null) {
 				Marker newMarker = new Marker();
 				newMarker.pattern = p;
 				newMarker.match = match;
@@ -140,7 +134,6 @@ public class Scanner implements Iterable<Marker> {
 				}
 				newMarker.isCloseScope = false;
 				bestMarker = newMarker.bestOf(bestMarker);
-				positionNow = match.getByteCapture(0).end;
 			}
 		}
 		return bestMarker;
