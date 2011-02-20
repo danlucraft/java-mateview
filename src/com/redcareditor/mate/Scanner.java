@@ -18,8 +18,6 @@ public class Scanner implements Iterable<Marker> {
 	public int lineLength;
 	public int lineIx;
 	public Logger logger;
-	public enum Mode { FULL, DOUBLE_ONLY, VALIDATE_DOUBLE}
-	public final Mode mode;
 	
 	public void setCurrentScope(Scope scope) {
 		this.currentScope = scope;
@@ -30,16 +28,11 @@ public class Scanner implements Iterable<Marker> {
 	}
 	
 	public Scanner(Scope startScope, String line, int lineIx) {
-		this(startScope, line, lineIx, Mode.DOUBLE_ONLY);
-	}
-	
-	public Scanner(Scope startScope, String line, int lineIx, Mode mode) {
 		this.currentScope = startScope;
 		this.line = line;
 		this.lineIx = lineIx;
 		this.lineLength = line.getBytes().length;
 		this.position = 0;
-		this.mode = mode;
 		logger = Logger.getLogger("JMV.Scanner");
 		logger.setUseParentHandlers(false);
 		for (Handler h : logger.getHandlers()) {
