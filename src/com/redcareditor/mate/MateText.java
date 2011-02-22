@@ -43,6 +43,7 @@ import com.redcareditor.theme.ThemeManager;
 import com.redcareditor.util.SingleLineFormatter;
 
 public class MateText {
+    public static String VERSION = "0.11";
 	public Parser parser;
 	public Colourer colourer;
 	public Logger logger;
